@@ -1,13 +1,13 @@
 # Usage
 
 ## Start Parameters
-***
 
+(pykms-server-py)=
 ### pykms_Server.py
 Follows a list of usable parameters:
 
     ip <IPADDRESS>
-> Instructs py-kms to listen on _IPADDRESS_ (can be an hostname too). If this option is not specified, _IPADDRESS_ 0.0.0.0 is used.
+> Instructs py-kms to listen on _IPADDRESS_ (can be an hostname too). If this option is not specified, _IPADDRESS_ `::` is used.
 
     port <PORT>
 > Define TCP _PORT_ the KMS service is listening on. Default is 1688.
@@ -28,7 +28,7 @@ You may want to select the locale ID of your country instead.
 See [here](https://msdn.microsoft.com/en-us/library/cc233982.aspx) for a list of valid _LCIDs_.
 
     -w or --hwid <HWID>
-> Use specified _HWID_ for all products. Use `-w RANDOM` to generate a random HWID. Default is _364F463A8863D35F_.
+> Use specified _HWID_ for all products. Use `-w RANDOM` to generate a random HWID. Default is random.
 Hardware Identification is a security measure used by Microsoft upon the activation of 
 the Windows operating system. As part of the Product Activation system, a unique
 HWID number is generated when the operating system is first installed. The _HWID_ identifies the hardware components that the system 
@@ -53,7 +53,6 @@ e.g. because it could not reach the server. The default is 120 minutes (2 hours)
 
     -s or --sqlite [<SQLFILE>]
 > Use this option to store request information from unique clients in an SQLite database. Deactivated by default.
-If enabled the default database file is _pykms_database.db_. You can also provide a specific location.
 
     -t0 or --timeout-idle <TIMEOUTIDLE>
 > Maximum inactivity time (in seconds) after which the connection with the client is closed. 
@@ -75,7 +74,7 @@ user@host ~/path/to/folder/py-kms $ python3 pykms_Server.py -V INFO
 ```
 creates _pykms_logserver.log_ with these initial messages:
 ```
-Mon, 12 Jun 2017 22:09:00 INFO     TCP server listening at 0.0.0.0 on port 1688.
+Mon, 12 Jun 2017 22:09:00 INFO     TCP server listening at :: on port 1688.
 Mon, 12 Jun 2017 22:09:00 INFO     HWID: 364F463A8863D35F
 ```
 
@@ -83,28 +82,28 @@ Mon, 12 Jun 2017 22:09:00 INFO     HWID: 364F463A8863D35F
 > Creates a _LOGFILE.log_ logging file. The default is named _pykms_logserver.log_.
 example:
 ```
-user@host ~/path/to/folder/py-kms $ python3 pykms_Server.py 192.168.1.102 8080 -F ~/path/to/folder/py-kms/newlogfile.log -V INFO -w RANDOM
+user@host ~/path/to/folder/py-kms $ python3 pykms_Server.py 192.168.1.102 1688 -F ~/path/to/folder/py-kms/newlogfile.log -V INFO -w RANDOM
 ```
 creates _newlogfile.log_ with these initial messages:
 ```
-Mon, 12 Jun 2017 22:09:00 INFO     TCP server listening at 192.168.1.102 on port 8080.
+Mon, 12 Jun 2017 22:09:00 INFO     TCP server listening at 192.168.1.102 on port 1688.
 Mon, 12 Jun 2017 22:09:00 INFO     HWID: 58C4F4E53AE14224
 ```
 
 You can also enable other suboptions of `-F` doing what is reported in the following table:
 
-| command | pretty msg | logging msg | logfile |
-| --- | --- | --- | --- |
-| `-F <logfile>` | ON | OFF | ON |
-| `-F STDOUT` | OFF | ON | OFF |
-| `-F FILESTDOUT <logfile>` | OFF | ON | ON |
-| `-F STDOUTOFF <logfile>` | OFF | OFF | ON |
-| `-F FILEOFF` | ON | OFF | OFF |
+| command                   | pretty msg | logging msg | logfile |
+| ------------------------- | ---------- | ----------- | ------- |
+| `-F <logfile>`            | ON         | OFF         | ON      |
+| `-F STDOUT`               | OFF        | ON          | OFF     |
+| `-F FILESTDOUT <logfile>` | OFF        | ON          | ON      |
+| `-F STDOUTOFF <logfile>`  | OFF        | OFF         | ON      |
+| `-F FILEOFF`              | ON         | OFF         | OFF     |
 
     -S or --logsize <MAXSIZE>
 > Use this flag to set a maximum size (in MB) to the output log file. Deactivated by default.
 
-##### subparser `connect`
+#### subparser `connect`
 
     -n or --listen <'IP,PORT'>
 > Use this option to add multiple listening ip address - port couples. Note the format with the comma between the ip address and the port number. You can use this option more than once.
@@ -117,22 +116,22 @@ If placed just after `connect` refers to the main address and all additive coupl
 > Use this option not to allow binding / listening to the same ip address - port couple specified with `-n`.
 If placed just after `connect` refers to the main address and all additive couples without `-u` option. Reusing port is activated by default (except when running inside the Windows Sandbox and the current user is `WDAGUtilityAccount`).
 
-    -d or --dual
-> Use this option to allow listening to an IPv6 address also accepting connections via IPv4.
-If used it refers to all addresses (main and additional). Deactivated by default.
+    -d or --dual <bool>
+> Allows listening to an IPv6 address while also accepting connections via IPv4. If used, it refers to all addresses (main and additional). Activated by default. Pass in "false" or "true" to disable or enable.
 
-examples (with fictitious addresses and ports):
+Examples (with fictitious addresses and ports):
 
-| command | address (main) | backlog (main) | reuse port (main) | address (listen) | backlog (listen) | reuse port (listen) | dualstack (main / listen) |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `python3 pykms_Server.py connect -b 12` | ('0.0.0.0', 1688) | 12 | True | [] | [] | [] | False |
-| `python3 pykms_Server.py :: connect -b 12 -u -d` | ('::', 1688) | 12 | False | [] | [] | [] | True |
-| `python3 pykms_Server.py connect -n 1.1.1.1,1699 -b 10` | ('0.0.0.0', 1688) | 5 | True | [('1.1.1.1', 1699)] | [10] | [True] | False |
-| `python3 pykms_Server.py :: 1655 connect -n 2001:db8:0:200::7,1699 -d -b 10 -n 2.2.2.2,1677 -u` | ('::', 1655) | 5 | True | [('2001:db8:0:200::7', 1699), ('2.2.2.2', 1677)] | [10, 5] | [True, False] | True |
-| `python3 pykms_Server.py connect -b 12 -u -n 1.1.1.1,1699 -b 10 -n 2.2.2.2,1677 -b 15` | ('0.0.0.0', 1688) | 12 | False | [('1.1.1.1', 1699), ('2.2.2.2', 1677)] | [10, 15] | [False, False] | False |
-| `python3 pykms_Server.py connect -b 12 -n 1.1.1.1,1699 -u -n 2.2.2.2,1677` | ('0.0.0.0', 1688) | 12 | True | [('1.1.1.1', 1699), ('2.2.2.2', 1677)] | [12, 12] | [False, True] | False |
-| `python3 pykms_Server.py connect -d -u -b 8 -n 1.1.1.1,1699 -n 2.2.2.2,1677 -b 12` | ('0.0.0.0', 1688) | 8 | False | [('1.1.1.1', 1699), ('2.2.2.2', 1677)] | [8, 12] | [False, False] | True |
-| `python3 pykms_Server.py connect -b 11 -u -n ::,1699 -n 2.2.2.2,1677` | ('0.0.0.0', 1688) | 11 | False | [('::', 1699), ('2.2.2.2', 1677)] | [11, 11] | [False, False] | False |
+| command                                                                                              | address (main) | backlog (main) | reuse port (main) | address (listen)                                 | backlog (listen) | reuse port (listen) | dualstack (main / listen) |
+| ---------------------------------------------------------------------------------------------------- | -------------- | -------------- | ----------------- | ------------------------------------------------ | ---------------- | ------------------- | ------------------------- |
+| `python3 pykms_Server.py connect -b 12`                                                              | ('::', 1688)   | 12             | True              | []                                               | []               | []                  | True                      |
+| `python3 pykms_Server.py :: connect -b 12 -u -d yes`                                                 | ('::', 1688)   | 12             | False             | []                                               | []               | []                  | True                      |
+| `python3 pykms_Server.py :: connect -b 12 -u -d false`                                               | ('::', 1688)   | 12             | False             | []                                               | []               | []                  | False                     |
+| `python3 pykms_Server.py connect -n 1.1.1.1,1699 -b 10`                                              | ('::', 1688)   | 5              | True              | [('1.1.1.1', 1699)]                              | [10]             | [True]              | True                      |
+| `python3 pykms_Server.py :: 1655 connect -n 2001:db8:0:200::7,1699 -d true -b 10 -n 2.2.2.2,1677 -u` | ('::', 1655)   | 5              | True              | [('2001:db8:0:200::7', 1699), ('2.2.2.2', 1677)] | [10, 5]          | [True, False]       | True                      |
+| `python3 pykms_Server.py connect -b 12 -u -n 1.1.1.1,1699 -b 10 -n 2.2.2.2,1677 -b 15`               | ('::', 1688)   | 12             | False             | [('1.1.1.1', 1699), ('2.2.2.2', 1677)]           | [10, 15]         | [False, False]      | True                      |
+| `python3 pykms_Server.py connect -b 12 -n 1.1.1.1,1699 -u -n 2.2.2.2,1677`                           | ('::', 1688)   | 12             | True              | [('1.1.1.1', 1699), ('2.2.2.2', 1677)]           | [12, 12]         | [False, True]       | True                      |
+| `python3 pykms_Server.py connect -d 0 -u -b 8 -n 1.1.1.1,1699 -n 2.2.2.2,1677 -b 12`                 | ('::', 1688)   | 8              | False             | [('1.1.1.1', 1699), ('2.2.2.2', 1677)]           | [8, 12]          | [False, False]      | False                     |
+| `python3 pykms_Server.py connect -b 11 -u -n ::,1699 -n 2.2.2.2,1677`                                | ('::', 1688)   | 11             | False             | [('::', 1699), ('2.2.2.2', 1677)]                | [11, 11]         | [False, False]      | True                      |
 
 ### pykms_Client.py
 If _py-kms_ server doesn't works correctly, you can test it with the KMS client `pykms_Client.py`, running on the same machine where you started `pykms_Server.py`.
@@ -198,12 +197,13 @@ You can enable same _pykms_Server.py_ suboptions of `-F`.
     -S or --logsize <MAXSIZE>
 > Use this flag to set a maximum size (in MB) to the output log file. Deactivated by default.
 
+(docker-environment)=
 ## Docker Environment
-This are the currently used `ENV` statements from the Dockerfile(s). For further references what exactly the parameters mean, please see the start parameters for the [server](Usage.html#pykms-server-py).
+This are the currently used `ENV` statements from the Dockerfile(s). For further references what exactly the parameters mean, please see the start parameters for the [server](#pykms-server-py).
 ```
 # IP-address
-# The IP address to listen on. The default is "0.0.0.0" (all interfaces).
-ENV IP 0.0.0.0
+# The IP address to listen on. The default is "::" (all interfaces).
+ENV IP ::
 
 # TCP-port
 # The network port to listen on. The default is "1688".
@@ -230,19 +230,11 @@ ENV ACTIVATION_INTERVAL 120
 # Use this flag to specify the renewal interval (in minutes). Default is 10080 minutes (7 days).
 ENV RENEWAL_INTERVAL 10080
 
-# Use SQLITE
-# Use this flag to store request information from unique clients in an SQLite database.
-ENV SQLITE false
-
-# TCP-port
-# The network port to listen with the web interface on. The default is "8080".
-ENV SQLITE_PORT 8080
-
 # hwid
 # Use this flag to specify a HWID. 
 # The HWID must be an 16-character string of hex characters.
-# The default is "364F463A8863D35F" or type "RANDOM" to auto generate the HWID.
-ENV HWID 364F463A8863D35F
+# The default is "RANDOM" to auto-generate the HWID or type a specific value.
+ENV HWID RANDOM
 
 # log level ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG")
 # Use this flag to set a Loglevel. The default is "ERROR".
@@ -261,7 +253,6 @@ ENV LOGSIZE ""
 The product asks for a key during installation, so it needs you to enter the GVLK. Then the user can set connection parameters, while KMS server must already be running on server machine. Finally with specific commands, activation occurs automatically and can be extended later every time for another 180 (or 30 or 45) days.
 
 ### Windows
-***
 The `//nologo` option of `cscript` was used only to hide the startup logo.
 
 ![win1](img/win1.png)
@@ -279,7 +270,6 @@ The `//nologo` option of `cscript` was used only to hide the startup logo.
 6. View license informations (optional).
 
 ### Office
-***
 Note that you’ll have to install a volume license (VL) version of Office. Office versions downloaded from MSDN and / or Technet are non-VL.
 
 ![off1](img/off1.png)
